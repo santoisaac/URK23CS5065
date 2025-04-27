@@ -1,71 +1,145 @@
 package busbooking.js;
 
+import javax.swing.*;
 import java.awt.*;
 import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
-import javax.swing.*;
+import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
 
 public class BusBookingSystem extends JFrame {
-    private final JButton bookTicketButton, cancelTicketButton, checkStatusButton, showPassengersButton;
-    private final JTextArea textArea;
-    private final JComboBox<String> locationDropdown;
-    private final int totalSeats = 100;
-    private final String[][] seats;
+    private final JButton bookTicketButton, viewPassengersButton, cancelTicketButton, checkStatusButton;
+    private final JTextField nameField, ageField;
+    private final JComboBox<String> pickupDropdown, dropDropdown;
+    private final JRadioButton maleButton, femaleButton, otherButton;
+    private final ButtonGroup genderGroup;
     private final String dbUrl = "jdbc:mysql://localhost:3306/bus_booking";
     private final String dbUsername = "root";
     private final String dbPassword = "mysql";
+    private final int totalSeats = 60;
+    private final String[][] seats;
     private final Map<String, String> locationTimings;
 
     public BusBookingSystem() {
-        seats = new String[totalSeats][2];
+        seats = new String[totalSeats][4];
         for (int i = 0; i < totalSeats; i++) {
             seats[i][0] = "Available";
             seats[i][1] = null;
+            seats[i][2] = null;
+            seats[i][3] = null;
         }
 
-        String[] locations = {"Chennai", "Madurai", "Coimbatore", "Tiruchirappalli", "Salem"};
+        String[] locations = {
+            "Chennai", "Madurai", "Coimbatore", "Tiruchirappalli", "Salem",
+            "Tirunelveli", "Thoothukudi", "Erode", "Vellore", "Nagercoil",
+            "Bengaluru", "Mysuru", "Mangalore", "Hubballi", "Belagavi",
+            "Hyderabad", "Warangal", "Vijayawada", "Visakhapatnam", "Tirupati",
+            "Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Kottayam",
+            "Puducherry", "Cuddalore", "Chidambaram", "Kumbakonam", "Thanjavur"
+        };
+
         locationTimings = new HashMap<>();
-        locationTimings.put("Chennai", "09:00 AM");
-        locationTimings.put("Madurai", "10:00 AM");
-        locationTimings.put("Coimbatore", "11:00 AM");
-        locationTimings.put("Tiruchirappalli", "01:00 PM");
-        locationTimings.put("Salem", "02:00 PM");
+        for (String loc : locations) {
+            locationTimings.put(loc, "09:00 AM");
+        }
+
+        pickupDropdown = new JComboBox<>(locations);
+        dropDropdown = new JComboBox<>(locations);
+
+        nameField = new JTextField(15);
+        ageField = new JTextField(5);
+
+        maleButton = new JRadioButton("Male");
+        femaleButton = new JRadioButton("Female");
+        otherButton = new JRadioButton("Other");
+        genderGroup = new ButtonGroup();
+        genderGroup.add(maleButton);
+        genderGroup.add(femaleButton);
+        genderGroup.add(otherButton);
 
         bookTicketButton = new JButton("Book Ticket");
+        viewPassengersButton = new JButton("View Passengers");
         cancelTicketButton = new JButton("Cancel Ticket");
         checkStatusButton = new JButton("Check Status");
-        showPassengersButton = new JButton("Show Passengers");
 
-        textArea = new JTextArea(20, 50);
-        textArea.setLineWrap(true);
-        textArea.setWrapStyleWord(true);
-        JScrollPane scrollPane = new JScrollPane(textArea);
-
-        locationDropdown = new JComboBox<>(locations);
+        customizeButton(bookTicketButton, new Color(0, 153, 76), Color.WHITE);
+        customizeButton(viewPassengersButton, new Color(0, 102, 204), Color.WHITE);
+        customizeButton(cancelTicketButton, new Color(204, 0, 0), Color.WHITE);
+        customizeButton(checkStatusButton, new Color(255, 153, 0), Color.WHITE);
 
         bookTicketButton.addActionListener(e -> bookTicket());
+        viewPassengersButton.addActionListener(e -> viewPassengers());
         cancelTicketButton.addActionListener(e -> cancelTicket());
         checkStatusButton.addActionListener(e -> checkStatus());
-        showPassengersButton.addActionListener(e -> showPassengers());
 
-        customizeButton(bookTicketButton, Color.GREEN, Color.BLACK);
-        customizeButton(cancelTicketButton, Color.ORANGE, Color.BLACK);
-        customizeButton(checkStatusButton, Color.CYAN, Color.BLACK);
-        customizeButton(showPassengersButton, Color.PINK, Color.BLACK);
+        setLayout(new BorderLayout());
 
-        GradientPanel panel = new GradientPanel();
-        panel.setLayout(new FlowLayout());
-        panel.add(locationDropdown);
-        panel.add(bookTicketButton);
-        panel.add(cancelTicketButton);
-        panel.add(checkStatusButton);
-        panel.add(showPassengersButton);
-        panel.add(scrollPane);
+        JPanel mainPanel = new GradientPanel();
+        mainPanel.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
 
-        setContentPane(panel);
-        setTitle("Bus Booking System");
-        setSize(600, 500);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        mainPanel.add(new JLabel("Pickup Location:"), gbc);
+
+        gbc.gridx = 1;
+        mainPanel.add(pickupDropdown, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        mainPanel.add(new JLabel("Drop Location:"), gbc);
+
+        gbc.gridx = 1;
+        mainPanel.add(dropDropdown, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        mainPanel.add(new JLabel("Passenger Name:"), gbc);
+
+        gbc.gridx = 1;
+        mainPanel.add(nameField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        mainPanel.add(new JLabel("Age:"), gbc);
+
+        gbc.gridx = 1;
+        mainPanel.add(ageField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        mainPanel.add(new JLabel("Gender:"), gbc);
+
+        JPanel genderPanel = new JPanel();
+        genderPanel.setOpaque(false);
+        genderPanel.add(maleButton);
+        genderPanel.add(femaleButton);
+        genderPanel.add(otherButton);
+
+        gbc.gridx = 1;
+        mainPanel.add(genderPanel, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        mainPanel.add(bookTicketButton, gbc);
+
+        gbc.gridy++;
+        mainPanel.add(viewPassengersButton, gbc);
+
+        gbc.gridy++;
+        mainPanel.add(cancelTicketButton, gbc);
+
+        gbc.gridy++;
+        mainPanel.add(checkStatusButton, gbc);
+
+        add(mainPanel, BorderLayout.CENTER);
+
+        setTitle("Bus Ticket Booking System");
+        setSize(500, 700);
+        setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
 
@@ -81,99 +155,190 @@ public class BusBookingSystem extends JFrame {
     }
 
     private void bookTicket() {
-        String selectedLocation = (String) locationDropdown.getSelectedItem();
-        String passengerName = JOptionPane.showInputDialog("Enter your name:");
+        String pickupLocation = (String) pickupDropdown.getSelectedItem();
+        String dropLocation = (String) dropDropdown.getSelectedItem();
+        String passengerName = nameField.getText().trim();
+        String passengerAge = ageField.getText().trim();
+        String passengerGender = null;
 
-        if (passengerName == null || passengerName.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Name cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+        if (maleButton.isSelected()) passengerGender = "Male";
+        else if (femaleButton.isSelected()) passengerGender = "Female";
+        else if (otherButton.isSelected()) passengerGender = "Other";
+
+        if (pickupLocation.equals(dropLocation)) {
+            JOptionPane.showMessageDialog(this, "Pickup and Drop locations cannot be the same!", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        for (int i = 0; i < totalSeats; i++) {
-            if (seats[i][0].equals("Available")) {
-                seats[i][0] = "Booked";
-                seats[i][1] = passengerName;
-                JOptionPane.showMessageDialog(this, "Ticket booked successfully! Seat Number: " + (i + 1));
-                saveBookingToDatabase(selectedLocation, passengerName, i + 1);
-                return;
-            }
-        }
-
-        JOptionPane.showMessageDialog(this, "No available seats.", "Error", JOptionPane.ERROR_MESSAGE);
-    }
-
-    private void cancelTicket() {
-        String passengerName = JOptionPane.showInputDialog("Enter your name to cancel:");
-
-        if (passengerName == null || passengerName.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Name cannot be empty.", "Error", JOptionPane.ERROR_MESSAGE);
+        if (passengerName.isEmpty() || passengerAge.isEmpty() || passengerGender == null) {
+            JOptionPane.showMessageDialog(this, "Please fill all details correctly!", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        for (int i = 0; i < totalSeats; i++) {
-            if (passengerName.equals(seats[i][1])) {
-                seats[i][0] = "Available";
-                seats[i][1] = null;
-                JOptionPane.showMessageDialog(this, "Ticket canceled successfully! Seat Number: " + (i + 1));
-                removeBookingFromDatabase(i + 1);
-                return;
-            }
+        String seatInput = JOptionPane.showInputDialog(this, "Enter Seat Number (1 to " + totalSeats + "):");
+        if (seatInput == null || seatInput.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Seat number is required!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
 
-        JOptionPane.showMessageDialog(this, "No booking found for this name.", "Error", JOptionPane.ERROR_MESSAGE);
-    }
-
-    private void checkStatus() {
-        StringBuilder status = new StringBuilder("Seat Status:\n");
-        for (int i = 0; i < totalSeats; i++) {
-            status.append("Seat ").append(i + 1).append(": ").append(seats[i][0]).append("\n");
+        int seatNumber;
+        try {
+            seatNumber = Integer.parseInt(seatInput.trim());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Invalid seat number!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-        textArea.setText(status.toString());
-    }
 
-    private void showPassengers() {
-        StringBuilder passengers = new StringBuilder("Booked Passengers:\n");
-        for (int i = 0; i < totalSeats; i++) {
-            if (seats[i][0].equals("Booked")) {
-                passengers.append("Seat ").append(i + 1).append(": ").append(seats[i][1]).append("\n");
-            }
+        if (seatNumber < 1 || seatNumber > totalSeats) {
+            JOptionPane.showMessageDialog(this, "Seat number must be between 1 and " + totalSeats, "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
-        textArea.setText(passengers.toString());
+
+        int index = seatNumber - 1;
+        if (seats[index][0].equals("Booked")) {
+            JOptionPane.showMessageDialog(this, "Seat already booked! Please select another seat.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        seats[index][0] = "Booked";
+        seats[index][1] = passengerName;
+        seats[index][2] = passengerAge;
+        seats[index][3] = passengerGender;
+
+        String seatType = (index < 30) ? "Lower" : "Upper";
+
+        JOptionPane.showMessageDialog(this, "Ticket booked successfully!\nSeat Number: " + seatNumber + " (" + seatType + " Berth)");
+        saveBookingToDatabase(pickupLocation, dropLocation, passengerName, Integer.parseInt(passengerAge), passengerGender, seatNumber, seatType);
+        clearForm();
     }
 
-    private void saveBookingToDatabase(String location, String passengerName, int seatNumber) {
-        String insertQuery = "INSERT INTO bookings (location, passenger_name, seat_number) VALUES (?, ?, ?)";
+    private void saveBookingToDatabase(String pickup, String drop, String name, int age, String gender, int seatNumber, String seatType) {
+        String insertQuery = "INSERT INTO bookings (pickup_location, drop_location, passenger_name, age, gender, seat_number, seat_type) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (Connection connection = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
-             PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
-            preparedStatement.setString(1, location);
-            preparedStatement.setString(2, passengerName);
-            preparedStatement.setInt(3, seatNumber);
-            preparedStatement.executeUpdate();
+             PreparedStatement stmt = connection.prepareStatement(insertQuery)) {
+            stmt.setString(1, pickup);
+            stmt.setString(2, drop);
+            stmt.setString(3, name);
+            stmt.setInt(4, age);
+            stmt.setString(5, gender);
+            stmt.setInt(6, seatNumber);
+            stmt.setString(7, seatType);
+            stmt.executeUpdate();
         } catch (SQLException e) {
             System.err.println("Error saving booking: " + e.getMessage());
         }
     }
 
-    private void removeBookingFromDatabase(int seatNumber) {
+    private void viewPassengers() {
+        List<String> passengers = new ArrayList<>();
+        for (int i = 0; i < totalSeats; i++) {
+            if (seats[i][0].equals("Booked")) {
+                passengers.add("Seat " + (i + 1) + ": " + seats[i][1] + ", Age: " + seats[i][2] + ", Gender: " + seats[i][3]);
+            }
+        }
+
+        if (passengers.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No passengers have booked tickets yet.", "Info", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JTextArea textArea = new JTextArea(String.join("\n", passengers));
+            textArea.setEditable(false);
+            JScrollPane scrollPane = new JScrollPane(textArea);
+            scrollPane.setPreferredSize(new Dimension(400, 300));
+            JOptionPane.showMessageDialog(this, scrollPane, "Passenger List", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void cancelTicket() {
+        String seatInput = JOptionPane.showInputDialog(this, "Enter Seat Number to Cancel (1 to " + totalSeats + "):");
+        if (seatInput == null || seatInput.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Seat number is required!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int seatNumber;
+        try {
+            seatNumber = Integer.parseInt(seatInput.trim());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Invalid seat number!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (seatNumber < 1 || seatNumber > totalSeats) {
+            JOptionPane.showMessageDialog(this, "Seat number must be between 1 and " + totalSeats, "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int index = seatNumber - 1;
+        if (seats[index][0].equals("Available")) {
+            JOptionPane.showMessageDialog(this, "Seat is already available!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        seats[index][0] = "Available";
+        seats[index][1] = null;
+        seats[index][2] = null;
+        seats[index][3] = null;
+
+        deleteBookingFromDatabase(seatNumber);
+
+        JOptionPane.showMessageDialog(this, "Ticket cancelled successfully for Seat " + seatNumber + ".", "Success", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void deleteBookingFromDatabase(int seatNumber) {
         String deleteQuery = "DELETE FROM bookings WHERE seat_number = ?";
         try (Connection connection = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
-             PreparedStatement preparedStatement = connection.prepareStatement(deleteQuery)) {
-            preparedStatement.setInt(1, seatNumber);
-            preparedStatement.executeUpdate();
+             PreparedStatement stmt = connection.prepareStatement(deleteQuery)) {
+            stmt.setInt(1, seatNumber);
+            stmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("Error removing booking: " + e.getMessage());
+            System.err.println("Error deleting booking: " + e.getMessage());
         }
+    }
+
+    private void checkStatus() {
+        String seatInput = JOptionPane.showInputDialog(this, "Enter Seat Number to Check Status (1 to " + totalSeats + "):");
+        if (seatInput == null || seatInput.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Seat number is required!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int seatNumber;
+        try {
+            seatNumber = Integer.parseInt(seatInput.trim());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Invalid seat number!", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (seatNumber < 1 || seatNumber > totalSeats) {
+            JOptionPane.showMessageDialog(this, "Seat number must be between 1 and " + totalSeats, "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int index = seatNumber - 1;
+        if (seats[index][0].equals("Booked")) {
+            JOptionPane.showMessageDialog(this, "Seat " + seatNumber + " is Booked.\nPassenger: " + seats[index][1], "Status", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, "Seat " + seatNumber + " is Available.", "Status", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void clearForm() {
+        nameField.setText("");
+        ageField.setText("");
+        genderGroup.clearSelection();
+    }
+
+    private void customizeButton(JButton button, Color background, Color foreground) {
+        button.setBackground(background);
+        button.setForeground(foreground);
+        button.setFocusPainted(false);
+        button.setFont(new Font("Arial", Font.BOLD, 16));
+        button.setPreferredSize(new Dimension(200, 40));
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(BusBookingSystem::new);
-    }
-
-    private void customizeButton(JButton button, Color backgroundColor, Color foregroundColor) {
-        button.setBackground(backgroundColor);
-        button.setForeground(foregroundColor);
-        button.setFocusPainted(false);
-        button.setFont(new Font("Arial", Font.BOLD, 14));
     }
 }
 
@@ -182,12 +347,10 @@ class GradientPanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
-        int width = getWidth();
-        int height = getHeight();
-        Color color1 = Color.CYAN;
-        Color color2 = Color.MAGENTA;
-        GradientPaint gp = new GradientPaint(0, 0, color1, width, height, color2);
+        int w = getWidth();
+        int h = getHeight();
+        GradientPaint gp = new GradientPaint(0, 0, Color.CYAN, w, h, Color.PINK);
         g2d.setPaint(gp);
-        g2d.fillRect(0, 0, width, height);
+        g2d.fillRect(0, 0, w, h);
     }
 }
