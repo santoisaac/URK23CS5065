@@ -1,0 +1,26 @@
+Purpose:
+
+This Java Swing application simulates a Bus Ticket Booking System.
+
+It allows users to:
+
+Book tickets
+
+Cancel bookings
+
+Check seat status
+
+Show all passengers
+
+It also connects to a MySQL database to save and manage bookings.
+
+
+
+Package Structure:
+
+Package: busbooking.js
+
+Class: BusBookingSystem (Main class)
+
+Helper Class: GradientPanel (For background design)
+
