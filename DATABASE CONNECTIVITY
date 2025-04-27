@@ -1,0 +1,11 @@
+CREATE DATABASE bus_booking;
+
+USE bus_booking;
+
+CREATE TABLE bookings (
+    booking_id INT AUTO_INCREMENT PRIMARY KEY,
+    location VARCHAR(100) NOT NULL,
+    passenger_name VARCHAR(100) NOT NULL,
+    seat_number INT NOT NULL UNIQUE
+);
+select * from bookings;
